@@ -1,0 +1,12 @@
+initial-data/pwcache/
+initial-data/images/
+webapp/ruby/
+webapp/perl/
+webapp/python/
+webapp/public/upload/
+webapp/php/
+webapp/nodejs/
+
+# デカすぎるファイル多数
+initial-data/result/
+webapp/sql/initial.sql
