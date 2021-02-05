@@ -2228,6 +2228,7 @@ func getSettings(w http.ResponseWriter, r *http.Request) {
 
 	ress.PaymentServiceURL = getPaymentServiceURL()
 
+	/*
 	categories := []Category{}
 
 	err := dbx.Select(&categories, "SELECT * FROM `categories`")
@@ -2236,7 +2237,9 @@ func getSettings(w http.ResponseWriter, r *http.Request) {
 		outputErrorMsg(w, http.StatusInternalServerError, "db error")
 		return
 	}
-	ress.Categories = categories
+	*/
+	ress.Categories = CategoryDataMaster
+	//ress.Categories = categories
 
 	w.Header().Set("Content-Type", "application/json;charset=utf-8")
 	json.NewEncoder(w).Encode(ress)
