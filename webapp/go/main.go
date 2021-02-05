@@ -60,6 +60,52 @@ const (
 	BcryptCost = 10
 )
 
+var CategoryDataMaster = []CategoryData{
+	{1,0,"ソファー"},
+	{2,1,"一人掛けソファー"},
+	{3,1,"二人掛けソファー"},
+	{4,1,"コーナーソファー"},
+	{5,1,"二段ソファー"},
+	{6,1,"ソファーベッド"},
+	{10, 0,"家庭用チェア"},
+	{11,10,"スツール"},
+	{12,10,"クッションスツール"},
+	{13,10,"ダイニングチェア"},
+	{14,10,"リビングチェア"},
+	{15,10,"カウンターチェア"},
+	{20, 0,"キッズチェア"},
+	{21,20,"学習チェア"},
+	{22,20,"ベビーソファ"},
+	{23,20,"キッズハイチェア"},
+	{24,20,"テーブルチェア"},
+	{30, 0,"オフィスチェア"},
+	{31,30,"デスクチェア"},
+	{32,30,"ビジネスチェア"},
+	{33,30,"回転チェア"},
+	{34,30,"リクライニングチェア"},
+	{35,30,"投擲用椅子"},
+	{40,0,"折りたたみ椅子"},
+	{41,40,"パイプ椅子"},
+	{42,40,"木製折りたたみ椅子"},
+	{43,40,"キッチンチェア"},
+	{44,40,"アウトドアチェア"},
+	{45,40,"作業椅子"},
+	{50, 0,"ベンチ"},
+	{51,50,"一人掛けベンチ"},
+	{52,50,"二人掛けベンチ"},
+	{53,50,"アウトドア用ベンチ"},
+	{54,50,"収納付きベンチ"},
+	{55,50,"背もたれ付きベンチ"},
+	{56,50,"ベンチマーク"},
+	{60, 0,"座椅子"},
+	{61,60,"和風座椅子"},
+	{62,60,"高座椅子"},
+	{63,60,"ゲーミング座椅子"},
+	{64,60,"ロッキングチェア"},
+	{65,60,"座布団"},
+	{66,60,"空気椅子"},
+}
+
 var (
 	templates *template.Template
 	dbx       *sqlx.DB
@@ -169,6 +215,12 @@ type Category struct {
 	ParentID           int    `json:"parent_id" db:"parent_id"`
 	CategoryName       string `json:"category_name" db:"category_name"`
 	ParentCategoryName string `json:"parent_category_name,omitempty" db:"-"`
+}
+
+type CategoryData struct {
+	ID                 int    
+	ParentID           int    
+	CategoryName       string
 }
 
 type reqInitialize struct {
@@ -602,6 +654,7 @@ func getNewItems(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(rni)
 }
 
+// TODO ここ遅い
 func getNewCategoryItems(w http.ResponseWriter, r *http.Request) {
 	rootCategoryIDStr := pat.Param(r, "root_category_id")
 	rootCategoryID, err := strconv.Atoi(rootCategoryIDStr)
@@ -617,12 +670,20 @@ func getNewCategoryItems(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var categoryIDs []int
+	for _, v := range CategoryDataMaster {
+		if rootCategory.ID != v.ParentID {
+			continue
+		}
+		categoryIDs = append(categoryIDs, v.ID)
+	}
+	/*
 	err = dbx.Select(&categoryIDs, "SELECT id FROM `categories` WHERE parent_id=?", rootCategory.ID)
 	if err != nil {
 		log.Print(err)
 		outputErrorMsg(w, http.StatusInternalServerError, "db error")
 		return
 	}
+	*/
 
 	query := r.URL.Query()
 	itemIDStr := query.Get("item_id")
@@ -1165,6 +1226,7 @@ func postItemEdit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO
 	tx := dbx.MustBegin()
 	err = tx.Get(&targetItem, "SELECT * FROM `items` WHERE `id` = ? FOR UPDATE", itemID)
 	if err != nil {
@@ -1293,6 +1355,7 @@ func postBuy(w http.ResponseWriter, r *http.Request) {
 	tx := dbx.MustBegin()
 
 	targetItem := Item{}
+	// TODO
 	err = tx.Get(&targetItem, "SELECT * FROM `items` WHERE `id` = ? FOR UPDATE", rb.ItemID)
 	if err == sql.ErrNoRows {
 		outputErrorMsg(w, http.StatusNotFound, "item not found")
@@ -1320,6 +1383,7 @@ func postBuy(w http.ResponseWriter, r *http.Request) {
 	}
 
 	seller := User{}
+	// TODO
 	err = tx.Get(&seller, "SELECT * FROM `users` WHERE `id` = ? FOR UPDATE", targetItem.SellerID)
 	if err == sql.ErrNoRows {
 		outputErrorMsg(w, http.StatusNotFound, "seller not found")
@@ -1522,6 +1586,7 @@ func postShip(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO
 	err = tx.Get(&transactionEvidence, "SELECT * FROM `transaction_evidences` WHERE `id` = ? FOR UPDATE", transactionEvidence.ID)
 	if err == sql.ErrNoRows {
 		outputErrorMsg(w, http.StatusNotFound, "transaction_evidences not found")
@@ -1541,6 +1606,7 @@ func postShip(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO
 	shipping := Shipping{}
 	err = tx.Get(&shipping, "SELECT * FROM `shippings` WHERE `transaction_evidence_id` = ? FOR UPDATE", transactionEvidence.ID)
 	if err == sql.ErrNoRows {
@@ -1633,6 +1699,7 @@ func postShipDone(w http.ResponseWriter, r *http.Request) {
 
 	tx := dbx.MustBegin()
 
+	// TODO
 	item := Item{}
 	err = tx.Get(&item, "SELECT * FROM `items` WHERE `id` = ? FOR UPDATE", itemID)
 	if err == sql.ErrNoRows {
@@ -1653,6 +1720,7 @@ func postShipDone(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO
 	err = tx.Get(&transactionEvidence, "SELECT * FROM `transaction_evidences` WHERE `id` = ? FOR UPDATE", transactionEvidence.ID)
 	if err == sql.ErrNoRows {
 		outputErrorMsg(w, http.StatusNotFound, "transaction_evidences not found")
@@ -1672,6 +1740,7 @@ func postShipDone(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO
 	shipping := Shipping{}
 	err = tx.Get(&shipping, "SELECT * FROM `shippings` WHERE `transaction_evidence_id` = ? FOR UPDATE", transactionEvidence.ID)
 	if err == sql.ErrNoRows {
@@ -1777,6 +1846,7 @@ func postComplete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO
 	tx := dbx.MustBegin()
 	item := Item{}
 	err = tx.Get(&item, "SELECT * FROM `items` WHERE `id` = ? FOR UPDATE", itemID)
@@ -1973,6 +2043,7 @@ func postSell(w http.ResponseWriter, r *http.Request) {
 
 	tx := dbx.MustBegin()
 
+	// TODO
 	seller := User{}
 	err = tx.Get(&seller, "SELECT * FROM `users` WHERE `id` = ? FOR UPDATE", user.ID)
 	if err == sql.ErrNoRows {
@@ -2061,6 +2132,7 @@ func postBump(w http.ResponseWriter, r *http.Request) {
 
 	tx := dbx.MustBegin()
 
+	// TODO
 	targetItem := Item{}
 	err = tx.Get(&targetItem, "SELECT * FROM `items` WHERE `id` = ? FOR UPDATE", itemID)
 	if err == sql.ErrNoRows {
