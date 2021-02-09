@@ -15,6 +15,7 @@ import (
 	"strconv"
 	"time"
 	_ "net/http/pprof"
+	"sync"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/sessions"
@@ -1454,6 +1455,21 @@ func postBuy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var scr *APIShipmentCreateRes
+	var resErr error
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		scr, resErr = APIShipmentCreate(getShipmentServiceURL(), &APIShipmentCreateReq{
+			ToAddress:   buyer.Address,
+			ToName:      buyer.AccountName,
+			FromAddress: seller.Address,
+			FromName:    seller.AccountName,
+		})
+	} ()
+
+	/*
 	scr, err := APIShipmentCreate(getShipmentServiceURL(), &APIShipmentCreateReq{
 		ToAddress:   buyer.Address,
 		ToName:      buyer.AccountName,
@@ -1467,6 +1483,7 @@ func postBuy(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
+	*/
 
 	pstr, err := APIPaymentToken(getPaymentServiceURL(), &APIPaymentServiceTokenReq{
 		ShopID: PaymentServiceIsucariShopID,
@@ -1481,6 +1498,7 @@ func postBuy(w http.ResponseWriter, r *http.Request) {
 		tx.Rollback()
 		return
 	}
+
 
 	if pstr.Status == "invalid" {
 		outputErrorMsg(w, http.StatusBadRequest, "カード情報に誤りがあります")
@@ -1497,6 +1515,15 @@ func postBuy(w http.ResponseWriter, r *http.Request) {
 	if pstr.Status != "ok" {
 		outputErrorMsg(w, http.StatusBadRequest, "想定外のエラー")
 		tx.Rollback()
+		return
+	}
+
+	wg.Wait()
+	if resErr != nil {
+		log.Print(err)
+		outputErrorMsg(w, http.StatusInternalServerError, "failed to request to shipment service")
+		tx.Rollback()
+
 		return
 	}
 
