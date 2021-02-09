@@ -16,6 +16,7 @@ import (
 	"time"
 	_ "net/http/pprof"
 	"sync"
+	"strings"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/sessions"
@@ -1052,9 +1053,18 @@ func getTransactions(w http.ResponseWriter, r *http.Request) {
 				tx.Rollback()
 				return
 			}
+			// original
 			ssr, err := APIShipmentStatus(getShipmentServiceURL(), &APIShipmentStatusReq{
 				ReserveID: shipping.ReserveID,
 			})
+			// APIが400を返す時があるのでリトライ
+			if err != nil && strings.HasPrefix(err.Error(), "status code: 400; body: <html>") {
+				//time.Sleep(10 * time.Millisecond)
+				ssr, err = APIShipmentStatus(getShipmentServiceURL(), &APIShipmentStatusReq{
+					ReserveID: shipping.ReserveID,
+				})
+			}
+
 			if err != nil {
 				log.Print(err)
 				outputErrorMsg(w, http.StatusInternalServerError, "failed to request to shipment service")
