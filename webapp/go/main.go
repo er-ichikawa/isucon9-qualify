@@ -16,7 +16,7 @@ import (
 	"time"
 	_ "net/http/pprof"
 	"sync"
-	"strings"
+	//"strings"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/sessions"
@@ -1053,7 +1053,9 @@ func getTransactions(w http.ResponseWriter, r *http.Request) {
 				tx.Rollback()
 				return
 			}
-			// original
+
+			// 外部APIへのリクエスト停止
+			/*
 			ssr, err := APIShipmentStatus(getShipmentServiceURL(), &APIShipmentStatusReq{
 				ReserveID: shipping.ReserveID,
 			})
@@ -1071,10 +1073,12 @@ func getTransactions(w http.ResponseWriter, r *http.Request) {
 				tx.Rollback()
 				return
 			}
+			*/
 
 			itemDetail.TransactionEvidenceID = transactionEvidence.ID
 			itemDetail.TransactionEvidenceStatus = transactionEvidence.Status
-			itemDetail.ShippingStatus = ssr.Status
+			itemDetail.ShippingStatus = shipping.Status
+			//itemDetail.ShippingStatus = ssr.Status
 		}
 
 		itemDetails = append(itemDetails, itemDetail)
