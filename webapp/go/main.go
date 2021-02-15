@@ -16,14 +16,16 @@ import (
 	"time"
 	_ "net/http/pprof"
 	"sync"
+	"crypto/aes"
 	//"strings"
+	"reflect"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/sessions"
 	"github.com/jmoiron/sqlx"
 	goji "goji.io"
 	"goji.io/pat"
-	"golang.org/x/crypto/bcrypt"
+	//"golang.org/x/crypto/bcrypt"
 )
 
 const (
@@ -2330,6 +2332,33 @@ func postLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	//plainText := []byte(password)
+	key := []byte("passw0rdpassw0rdpassw0rdpassw0rd")
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		outputErrorMsg(w, http.StatusInternalServerError, "password error")
+		return
+	}
+
+	// Encrypt
+	//cipherText := make([]byte, len(plainText))
+	//block.Encrypt(cipherText, plainText)
+
+	// if u.HashedPassword != cipherText {
+	// 	outputErrorMsg(w, http.StatusUnauthorized, "アカウント名かパスワードが間違えています")
+	// 	return
+	// }
+
+	// Decrypt
+	decryptedText := make([]byte, len(u.HashedPassword))
+	block.Decrypt(decryptedText, u.HashedPassword)
+	if !reflect.DeepEqual(u.HashedPassword, decryptedText) {
+	// if u.HashedPassword != decryptedText {
+		outputErrorMsg(w, http.StatusUnauthorized, "アカウント名かパスワードが間違えています")
+		return
+	}
+
+	/*
 	err = bcrypt.CompareHashAndPassword(u.HashedPassword, []byte(password))
 	if err == bcrypt.ErrMismatchedHashAndPassword {
 		outputErrorMsg(w, http.StatusUnauthorized, "アカウント名かパスワードが間違えています")
@@ -2341,6 +2370,7 @@ func postLogin(w http.ResponseWriter, r *http.Request) {
 		outputErrorMsg(w, http.StatusInternalServerError, "crypt error")
 		return
 	}
+	*/
 
 	session := getSession(r)
 
@@ -2375,6 +2405,24 @@ func postRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	plainText := []byte(password)
+	key := []byte("passw0rdpassw0rdpassw0rdpassw0rd")
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		outputErrorMsg(w, http.StatusInternalServerError, "password error")
+		return
+	}
+
+	// Encrypt
+	cipherText := make([]byte, len(plainText))
+	block.Encrypt(cipherText, plainText)
+
+	// if u.HashedPassword != cipherText {
+	// 	outputErrorMsg(w, http.StatusUnauthorized, "アカウント名かパスワードが間違えています")
+	// 	return
+	// }
+
+	/*
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), BcryptCost)
 	if err != nil {
 		log.Print(err)
@@ -2382,10 +2430,12 @@ func postRegister(w http.ResponseWriter, r *http.Request) {
 		outputErrorMsg(w, http.StatusInternalServerError, "error")
 		return
 	}
+	*/
 
 	result, err := dbx.Exec("INSERT INTO `users` (`account_name`, `hashed_password`, `address`) VALUES (?, ?, ?)",
 		accountName,
-		hashedPassword,
+		cipherText,
+		// hashedPassword,
 		address,
 	)
 	if err != nil {
