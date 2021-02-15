@@ -328,13 +328,18 @@ func init() {
 }
 
 func main() {
-	go func() {
-		log.Println(http.ListenAndServe("0.0.0.0:6060", nil))
-	} ()
+	//log.Printf("=============server start==========================")
+	// go func() {
+	// 	log.Println(http.ListenAndServe("0.0.0.0:6060", nil))
+	// } ()
+	
 	host := os.Getenv("MYSQL_HOST")
 	if host == "" {
 		host = "127.0.0.1"
 	}
+	
+	// wip DB instance 2
+	//host := "192.168.1.2"
 	port := os.Getenv("MYSQL_PORT")
 	if port == "" {
 		port = "3306"
@@ -413,6 +418,7 @@ func main() {
 	// Assets
 	mux.Handle(pat.Get("/*"), http.FileServer(http.Dir("../public")))
 	log.Fatal(http.ListenAndServe(":8000", mux))
+	//log.Fatal(http.ListenAndServe(":8001", mux))
 }
 
 func getSession(r *http.Request) *sessions.Session {
