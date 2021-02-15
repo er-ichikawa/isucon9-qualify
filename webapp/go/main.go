@@ -59,7 +59,10 @@ const (
 	ItemsPerPage        = 48
 	TransactionsPerPage = 10
 
-	BcryptCost = 10
+	// default
+	// BcryptCost = 10
+	// cost
+	BcryptCost = 4
 )
 
 var CategoryDataMaster = []Category{
