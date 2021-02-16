@@ -2352,7 +2352,7 @@ func postLogin(w http.ResponseWriter, r *http.Request) {
 	// Decrypt
 	decryptedText := make([]byte, len(u.HashedPassword))
 	block.Decrypt(decryptedText, u.HashedPassword)
-	if !reflect.DeepEqual(password, decryptedText) {
+	if !reflect.DeepEqual(u.HashedPassword, decryptedText) {
 	// if u.HashedPassword != decryptedText {
 		outputErrorMsg(w, http.StatusUnauthorized, "アカウント名かパスワードが間違えています")
 		return
