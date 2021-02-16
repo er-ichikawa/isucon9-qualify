@@ -1257,6 +1257,7 @@ func postItemEdit(w http.ResponseWriter, r *http.Request) {
 
 	// TODO
 	tx := dbx.MustBegin()
+	/*
 	err = tx.Get(&targetItem, "SELECT * FROM `items` WHERE `id` = ? FOR UPDATE", itemID)
 	if err != nil {
 		log.Print(err)
@@ -1271,16 +1272,25 @@ func postItemEdit(w http.ResponseWriter, r *http.Request) {
 		tx.Rollback()
 		return
 	}
+	*/
 
-	_, err = tx.Exec("UPDATE `items` SET `price` = ?, `updated_at` = ? WHERE `id` = ?",
+	result, err := tx.Exec("UPDATE `items` SET `price` = ?, `updated_at` = ? WHERE `id` = ? AND status = ?",
 		price,
 		time.Now(),
 		itemID,
+		ItemStatusOnSale,
 	)
 	if err != nil {
 		log.Print(err)
 
 		outputErrorMsg(w, http.StatusInternalServerError, "db error")
+		tx.Rollback()
+		return
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		outputErrorMsg(w, http.StatusForbidden, "販売中の商品以外編集できません")
 		tx.Rollback()
 		return
 	}
